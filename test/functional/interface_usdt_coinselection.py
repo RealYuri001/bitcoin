@@ -111,15 +111,14 @@ class CoinSelectionTracepointTest(BitcoinTestFramework):
     def get_tracepoints(self, expected_types):
         events = []
         try:
-            for i in range(0, len(expected_types) + 1):
+            for i in range(len(expected_types) + 1):
                 event = self.bpf["coin_selection_events"].pop()
                 assert_equal(event.wallet_name.decode(), self.default_wallet_name)
                 assert_equal(event.type, expected_types[i])
                 events.append(event)
-            else:
-                # If the loop exits successfully instead of throwing a KeyError, then we have had
-                # more events than expected. There should be no more than len(expected_types) events.
-                assert False
+            # If the loop exits successfully instead of throwing a KeyError, then we have had
+            # more events than expected. There should be no more than len(expected_types) events.
+            assert False
         except KeyError:
             assert_equal(len(events), len(expected_types))
             return events

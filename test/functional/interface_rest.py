@@ -68,7 +68,7 @@ class RESTTest (BitcoinTestFramework):
             ret_type: RetType = RetType.JSON,
             query_params: typing.Dict[str, typing.Any] = None,
             ) -> typing.Union[http.client.HTTPResponse, bytes, str, None]:
-        rest_uri = '/rest' + uri
+        rest_uri = f'/rest{uri}'
         if req_type in ReqType:
             rest_uri += f'.{req_type.name.lower()}'
         if query_params:

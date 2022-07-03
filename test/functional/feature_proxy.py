@@ -126,7 +126,6 @@ class ProxyTest(BitcoinTestFramework):
                 assert_equal(peer["network"], network)
 
     def node_test(self, node, *, proxies, auth, test_onion, test_cjdns):
-        rv = []
         addr = "15.61.23.23:1234"
         self.log.debug(f"Test: outgoing IPv4 connection through node for address {addr}")
         node.addnode(addr, "onetry")
@@ -139,7 +138,7 @@ class ProxyTest(BitcoinTestFramework):
         if not auth:
             assert_equal(cmd.username, None)
             assert_equal(cmd.password, None)
-        rv.append(cmd)
+        rv = [cmd]
         self.network_test(node, addr, network=NET_IPV4)
 
         if self.have_ipv6:
@@ -235,10 +234,7 @@ class ProxyTest(BitcoinTestFramework):
             auth=False, test_onion=True, test_cjdns=True)
 
         def networks_dict(d):
-            r = {}
-            for x in d['networks']:
-                r[x['name']] = x
-            return r
+            return {x['name']: x for x in d['networks']}
 
         self.log.info("Test RPC getnetworkinfo")
         nodes_network_info = []
