@@ -55,21 +55,19 @@ def parseline(line: str) -> Union[dict, None]:
             m = PATTERN_ONION.match(sline[0])
             if m is None:
                 return None
-            else:
-                net = 'onion'
-                ipstr = sortkey = m.group(1)
-                port = int(m.group(2))
+            net = 'onion'
+            ipstr = sortkey = m.group(1)
         else:
             net = 'ipv6'
             if m.group(1) in ['::']: # Not interested in localhost
                 return None
             ipstr = m.group(1)
             sortkey = ipstr # XXX parse IPv6 into number, could use name_to_ipv6 from generate-seeds
-            port = int(m.group(2))
+        port = int(m.group(2))
     else:
         # Do IPv4 sanity check
         ip = 0
-        for i in range(0,4):
+        for i in range(4):
             if int(m.group(i+2)) < 0 or int(m.group(i+2)) > 255:
                 return None
             ip = ip + (int(m.group(i+2)) << (8*(3-i)))
@@ -133,18 +131,28 @@ def lookup_asn(net: str, ip: str) -> Union[int, None]:
         if net == 'ipv4':
             ipaddr = ip
             prefix = '.origin'
-        else:                  # http://www.team-cymru.com/IP-ASN-mapping.html
+        else:          # http://www.team-cymru.com/IP-ASN-mapping.html
             res = str()                         # 2001:4860:b002:23::68
             for nb in ip.split(':')[:4]:  # pick the first 4 nibbles
                 for c in nb.zfill(4):           # right padded with '0'
-                    res += c + '.'              # 2001 4860 b002 0023
+                    res += f'{c}.'
             ipaddr = res.rstrip('.')            # 2.0.0.1.4.8.6.0.b.0.0.2.0.0.2.3
             prefix = '.origin6'
 
-        asn = int([x.to_text() for x in dns.resolver.resolve('.'.join(
-                   reversed(ipaddr.split('.'))) + prefix + '.asn.cymru.com',
-                   'TXT').response.answer][0].split('\"')[1].split(' ')[0])
-        return asn
+        return int(
+            [
+                x.to_text()
+                for x in dns.resolver.resolve(
+                    '.'.join(reversed(ipaddr.split('.')))
+                    + prefix
+                    + '.asn.cymru.com',
+                    'TXT',
+                ).response.answer
+            ][0]
+            .split('\"')[1]
+            .split(' ')[0]
+        )
+
     except Exception as e:
         sys.stderr.write(f'ERR: Could not resolve ASN for "{ip}": {e}\n')
         return None
@@ -183,7 +191,7 @@ def filterbyasn(ips: List[Dict], max_per_asn: Dict, max_per_net: int) -> List[Di
         result.append(ip)
 
     # Add back Onions (up to max_per_net)
-    result.extend(ips_onion[0:max_per_net])
+    result.extend(ips_onion[:max_per_net])
     return result
 
 def ip_stats(ips: List[Dict]) -> str:
